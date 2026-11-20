@@ -10,8 +10,28 @@ use Ram\Media\NandanLibrary;
 
 if (!defined('RAM_PATH')) exit;
 
+if (!ram_current_user_can('upload_files')) {
+    http_response_code(403);
+    exit('Sudarshana Security: You do not have permission to upload media.');
+}
+
 // Handle file upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['media_file'])) {
+    if (!ram_verify_nonce((string) ($_POST['_ram_nonce'] ?? ''), 'media_upload')) {
+        http_response_code(403);
+        exit('Sudarshana Security: Invalid upload request.');
+    }
+
+    $ramVar_allowed = [
+        'jpg' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'webp' => 'image/webp',
+        'pdf' => 'application/pdf',
+        'zip' => 'application/zip',
+    ];
+
     $ramVar_uploadDir = RAM_PATH . '/uploads/';
     if (!is_dir($ramVar_uploadDir)) {
         mkdir($ramVar_uploadDir, 0755, true);
@@ -21,12 +41,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['media_file'])) {
     $ramVar_tmpName = $ramVar_file['tmp_name'];
     $ramVar_name = basename($ramVar_file['name']);
     $ramVar_ext = strtolower(pathinfo($ramVar_name, PATHINFO_EXTENSION));
+    if (!isset($ramVar_allowed[$ramVar_ext])) {
+        http_response_code(415);
+        exit('Unsupported media type.');
+    }
+
+    $ramVar_mime = mime_content_type($ramVar_tmpName) ?: '';
+    if ($ramVar_mime !== $ramVar_allowed[$ramVar_ext]) {
+        http_response_code(415);
+        exit('Media content does not match its file type.');
+    }
+
+    if (str_starts_with($ramVar_mime, 'image/') && getimagesize($ramVar_tmpName) === false) {
+        http_response_code(415);
+        exit('Invalid image data.');
+    }
+
+    if ((int) ($ramVar_file['size'] ?? 0) > 64 * 1024 * 1024) {
+        http_response_code(413);
+        exit('Media file exceeds the 64 MB limit.');
+    }
+
     $ramVar_newName = uniqid() . '.' . $ramVar_ext;
     $ramVar_target = $ramVar_uploadDir . $ramVar_newName;
     
     if (move_uploaded_file($ramVar_tmpName, $ramVar_target)) {
         $ramVar_url = '/uploads/' . $ramVar_newName;
-        $ramVar_mime = mime_content_type($ramVar_target);
         $ramVar_size = filesize($ramVar_target);
         
         // Save to database
@@ -43,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_FILES['media_file'])) {
 ?>
 <div class="ayodhya-page-header">
     <h1>Nandan Treasury</h1>
+    <input type="hidden" id="ram-media-nonce" value="<?= ram_esc_attr(ram_create_nonce('media_upload')) ?>">
     <button class="btn btn-primary" onclick="document.getElementById('media-upload').click()"><span>📤</span> Add Treasure</button>
     <input type="file" id="media-upload" style="display: none;" multiple onchange="ramFn_handleUpload(this.files)">
 </div>
@@ -114,6 +155,7 @@ async function ramFn_handleUpload(files) {
     for (let file of files) {
         const formData = new FormData();
         formData.append('media_file', file);
+        formData.append('_ram_nonce', document.getElementById('ram-media-nonce').value);
         
         try {
             const response = await fetch('index.php?page=media', {

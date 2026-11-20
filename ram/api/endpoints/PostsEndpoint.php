@@ -39,19 +39,19 @@ class PostsEndpoint extends BrahmaandEndpoint
 
         if ($ramVar_id !== null) {
             $ramVar_post = ram_get_post((int) $ramVar_id);
-            if ($ramVar_post) {
+            if ($ramVar_post && ($ramVar_post['status'] ?? '') === 'publish') {
                 $this->ramFn_sendSuccess($ramVar_post);
             } else {
                 $this->ramFn_sendError('Post not found', 404);
             }
         } else {
             // List posts
-            $ramVar_limit  = (int) ($ramVar_request->ramFn_get('limit') ?? 10);
-            $ramVar_status = $ramVar_request->ramFn_get('status') ?? 'publish';
+            $ramVar_limit = max(1, min(100, (int) ($ramVar_request->ramFn_get('limit') ?? 10)));
             
             $ramVar_posts = ram_get_posts([
                 'limit'  => $ramVar_limit,
-                'status' => $ramVar_status
+                'status' => 'publish',
+                'post_type' => 'post',
             ]);
             
             $this->ramFn_sendSuccess($ramVar_posts);

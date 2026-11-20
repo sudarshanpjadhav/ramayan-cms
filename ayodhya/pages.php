@@ -70,7 +70,13 @@ $ramVar_pages = ram_get_posts(['post_type' => 'page', 'limit' => 50, 'status' =>
                         <div style="font-size: 0.75rem; margin-top: 0.25rem;">
                             <a href="index.php?page=post-edit&id=<?= $ramVar_page['id'] ?>" style="color: var(--ram-accent);">Edit</a>
                             <span style="color: var(--ram-border);">|</span>
-                            <a href="index.php?page=pages&action=trash&id=<?= $ramVar_page['id'] ?>" style="color: #F87171;" onclick="return confirm('Move to trash?')">Trash</a>
+                            <form method="POST" action="index.php?page=pages" style="display:inline;" onsubmit="return confirm('Move to trash?')">
+                                <?= ram_nonce_field('post_action_' . (int) $ramVar_page['id']) ?>
+                                <input type="hidden" name="ram_action" value="post_action">
+                                <input type="hidden" name="action" value="trash">
+                                <input type="hidden" name="id" value="<?= (int) $ramVar_page['id'] ?>">
+                                <button type="submit" style="border:0;background:none;color:#F87171;cursor:pointer;padding:0;">Trash</button>
+                            </form>
                             <span style="color: var(--ram-border);">|</span>
                             <a href="../?p=<?= $ramVar_page['id'] ?>" target="_blank" style="color: var(--ram-muted);">View</a>
                         </div>

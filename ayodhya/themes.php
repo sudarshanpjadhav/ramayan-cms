@@ -7,9 +7,21 @@ declare(strict_types=1);
 if (!defined('RAM_PATH')) exit;
 
 // Handle theme activation
-if (isset($_GET['action']) && $_GET['action'] === 'activate' && isset($_GET['theme'])) {
-    ram_update_option('active_theme', $_GET['theme']);
-    ram_redirect('index.php?page=themes&activated=1');
+if ($_SERVER['REQUEST_METHOD'] === 'POST'
+    && ($_POST['ram_action'] ?? '') === 'activate_theme') {
+    if (!ram_current_user_can('switch_themes')) {
+        http_response_code(403);
+        exit('Sudarshana Security: You do not have permission to switch themes.');
+    }
+    if (!ram_verify_nonce((string) ($_POST['_ram_nonce'] ?? ''), 'activate_theme')) {
+        http_response_code(403);
+        exit('Sudarshana Security: Invalid theme activation request.');
+    }
+    $ramVar_theme = basename((string) ($_POST['theme'] ?? ''));
+    if ($ramVar_theme !== '') {
+        ram_update_option('active_theme', $ramVar_theme);
+        ram_redirect('index.php?page=themes&activated=1');
+    }
 }
 
 $ramVar_themeDir = RAM_PATH . '/lanka';
@@ -143,9 +155,12 @@ if (is_dir($ramVar_themeDir)) {
                     <a href="index.php?page=customizer" class="btn">🎨 Customize</a>
                     <a href="/" target="_blank" class="btn">👁 View Site</a>
                     <?php else: ?>
-                    <a href="index.php?page=themes&action=activate&theme=<?= $theme['slug'] ?>" 
-                       class="btn btn-primary"
-                       onclick="return confirm('Activate <?= htmlspecialchars($theme['name']) ?>?')">⚡ Activate</a>
+                    <form method="POST" action="index.php?page=themes" style="flex:1;" onsubmit="return confirm('Activate <?= htmlspecialchars($theme['name']) ?>?')">
+                        <?= ram_nonce_field('activate_theme') ?>
+                        <input type="hidden" name="ram_action" value="activate_theme">
+                        <input type="hidden" name="theme" value="<?= ram_esc_attr($theme['slug']) ?>">
+                        <button type="submit" class="btn btn-primary" style="width:100%;">⚡ Activate</button>
+                    </form>
                     <a href="#" class="btn">ℹ️ Details</a>
                     <?php endif; ?>
                 </div>

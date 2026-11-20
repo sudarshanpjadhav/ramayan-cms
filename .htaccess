@@ -32,6 +32,17 @@
     </IfModule>
 </FilesMatch>
 
+# Block direct access to diagnostic and password-reset scripts
+<FilesMatch "^(test(_login)?(_flow)?\.php|test_login_flow\.php|fix-login\.php|check-users(-direct)?\.php|session-test\.php|db-test\.php)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order Allow,Deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 # ─── Block Access to Core Directories ────────────────────────────────────────
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -44,6 +55,9 @@
 
     # Block direct access to cache/ (only .html cached pages are allowed via file serving)
     RewriteRule ^cache/(.*)\.php$ - [F,L]
+
+    # Never execute scripts uploaded to the public media directory
+    RewriteRule ^uploads/(.*)\.(php[0-9]?|phtml|phar|cgi|pl|py|sh)$ - [F,L]
 </IfModule>
 
 # ─── URL Rewriting ─────────────────────────────────────────────────────────────

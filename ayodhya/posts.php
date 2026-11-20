@@ -91,9 +91,19 @@ if ($ramVar_action === 'save_post') {
 }
 
 // ─── Handle Trash/Delete Actions ───
-if (isset($_GET['action']) && isset($_GET['id'])) {
-    $ramVar_action = $_GET['action'];
-    $ramVar_postId = (int) $_GET['id'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['ram_action'] ?? '') === 'post_action') {
+    $ramVar_nonce = (string) ($_POST['_ram_nonce'] ?? '');
+    $ramVar_action = (string) ($_POST['action'] ?? '');
+    $ramVar_postId = (int) ($_POST['id'] ?? 0);
+
+    if (!ram_verify_nonce($ramVar_nonce, 'post_action_' . $ramVar_postId)) {
+        http_response_code(403);
+        exit('Sudarshana Security: Invalid post action.');
+    }
+    if (!ram_current_user_can('edit_posts')) {
+        http_response_code(403);
+        exit('Sudarshana Security: You do not have permission to manage posts.');
+    }
 
     if ($ramVar_action === 'trash' && $ramVar_postId > 0) {
         ram_trash_post($ramVar_postId);
@@ -229,13 +239,31 @@ function ramFn_renderPostList(): void {
                                 <?php if ($ramVar_post['status'] !== 'trash'): ?>
                                     <a href="index.php?page=post-edit&id=<?= $ramVar_post['id'] ?>" style="color: var(--ram-accent);">Edit</a>
                                     <span style="color: var(--ram-border);">|</span>
-                                    <a href="index.php?page=posts&action=trash&id=<?= $ramVar_post['id'] ?>" style="color: #F87171;" onclick="return confirm('Move to trash?');">Trash</a>
+                                    <form method="POST" action="index.php?page=posts" style="display:inline;" onsubmit="return confirm('Move to trash?');">
+                                        <?= ram_nonce_field('post_action_' . (int) $ramVar_post['id']) ?>
+                                        <input type="hidden" name="ram_action" value="post_action">
+                                        <input type="hidden" name="action" value="trash">
+                                        <input type="hidden" name="id" value="<?= (int) $ramVar_post['id'] ?>">
+                                        <button type="submit" style="border:0;background:none;color:#F87171;cursor:pointer;padding:0;">Trash</button>
+                                    </form>
                                     <span style="color: var(--ram-border);">|</span>
                                     <a href="../?p=<?= $ramVar_post['id'] ?>" target="_blank" style="color: var(--ram-muted);">View</a>
                                 <?php else: ?>
-                                    <a href="index.php?page=posts&action=restore&id=<?= $ramVar_post['id'] ?>" style="color: var(--ram-accent);">Restore</a>
+                                    <form method="POST" action="index.php?page=posts" style="display:inline;">
+                                        <?= ram_nonce_field('post_action_' . (int) $ramVar_post['id']) ?>
+                                        <input type="hidden" name="ram_action" value="post_action">
+                                        <input type="hidden" name="action" value="restore">
+                                        <input type="hidden" name="id" value="<?= (int) $ramVar_post['id'] ?>">
+                                        <button type="submit" style="border:0;background:none;color:var(--ram-accent);cursor:pointer;padding:0;">Restore</button>
+                                    </form>
                                     <span style="color: var(--ram-border);">|</span>
-                                    <a href="index.php?page=posts&action=delete&id=<?= $ramVar_post['id'] ?>" style="color: #EF4444;" onclick="return confirm('Delete permanently?');">Delete Permanently</a>
+                                    <form method="POST" action="index.php?page=posts" style="display:inline;" onsubmit="return confirm('Delete permanently?');">
+                                        <?= ram_nonce_field('post_action_' . (int) $ramVar_post['id']) ?>
+                                        <input type="hidden" name="ram_action" value="post_action">
+                                        <input type="hidden" name="action" value="delete">
+                                        <input type="hidden" name="id" value="<?= (int) $ramVar_post['id'] ?>">
+                                        <button type="submit" style="border:0;background:none;color:#EF4444;cursor:pointer;padding:0;">Delete Permanently</button>
+                                    </form>
                                 <?php endif; ?>
                             </div>
                         </td>

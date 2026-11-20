@@ -41,6 +41,7 @@ class PagesEndpoint extends BrahmaandEndpoint
             $ramVar_page = PatalDB::ramFn_table('posts')
                 ->ramFn_where('id', '=', (int) $ramVar_id)
                 ->ramFn_where('post_type', '=', 'page')
+                ->ramFn_where('status', '=', 'publish')
                 ->ramFn_first();
                 
             if ($ramVar_page) {
@@ -50,8 +51,10 @@ class PagesEndpoint extends BrahmaandEndpoint
             }
         } else {
             $ramVar_limit = (int) ($ramVar_request->ramFn_get('limit') ?? 10);
+            $ramVar_limit = max(1, min(100, $ramVar_limit));
             $ramVar_pages = PatalDB::ramFn_table('posts')
                 ->ramFn_where('post_type', '=', 'page')
+                ->ramFn_where('status', '=', 'publish')
                 ->ramFn_limit($ramVar_limit)
                 ->ramFn_get();
                 
