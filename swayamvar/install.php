@@ -7,6 +7,10 @@
 
 declare(strict_types=1);
 
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
 // ── Security: block if already installed ─────────────────────────────────────
 $ramVar_root       = dirname(__DIR__);
 $ramVar_configFile = $ramVar_root . '/ramayan-config.php';
@@ -19,6 +23,22 @@ if (file_exists($ramVar_configFile)) {
 // ── Only accept POST ──────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: index.php');
+    exit;
+}
+
+$ramVar_installToken = is_string($_POST['install_token'] ?? null)
+    ? $_POST['install_token']
+    : '';
+$ramVar_sessionToken = is_string($_SESSION['ram_installer_token'] ?? null)
+    ? $_SESSION['ram_installer_token']
+    : '';
+
+if (
+    $ramVar_sessionToken === ''
+    || $ramVar_installToken === ''
+    || !hash_equals($ramVar_sessionToken, $ramVar_installToken)
+) {
+    ramFn_installer_showError(['Installation session is invalid or has expired. Please restart Swayamvar.']);
     exit;
 }
 
@@ -270,6 +290,8 @@ $ramVar_pdo->prepare(
     '<p>This is an example about page. Edit it to tell visitors about your website.</p>',
     'An example about page.',
 ]);
+
+unset($_SESSION['ram_installer_token']);
 
 // ── Done — show success screen ─────────────────────────────────────────────────
 ?>

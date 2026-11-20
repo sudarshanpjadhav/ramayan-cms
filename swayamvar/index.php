@@ -10,6 +10,16 @@
 
 declare(strict_types=1);
 
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+if (empty($_SESSION['ram_installer_token'])) {
+    $_SESSION['ram_installer_token'] = bin2hex(random_bytes(32));
+}
+
+$ramVar_installerToken = $_SESSION['ram_installer_token'];
+
 // ── Security: block if already installed ─────────────────────────────────────
 $ramVar_configFile = dirname(__DIR__) . '/ramayan-config.php';
 if (file_exists($ramVar_configFile)) {
@@ -105,6 +115,67 @@ $ramVar_baseUrl = $ramVar_scheme . '://' . $ramVar_host . dirname($ramVar_script
             max-width: 560px;
             position: relative;
             z-index: 1;
+        }
+
+        .ram-wizard-panel {
+            display: none;
+        }
+
+        .ram-wizard-panel.active {
+            display: block;
+        }
+
+        #ramInstallForm {
+            display: none;
+        }
+
+        #ramInstallForm.active {
+            display: block;
+        }
+
+        .ram-wizard-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .ram-wizard-actions .ram-btn-primary,
+        .ram-wizard-actions .ram-btn-secondary {
+            flex: 1;
+        }
+
+        .ram-btn-secondary {
+            min-height: 48px;
+            border: 1px solid var(--ram-border);
+            border-radius: var(--ram-radius-sm);
+            background: rgba(255,255,255,0.04);
+            color: #CBD5E1;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .ram-review {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .ram-review-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--ram-border);
+            font-size: 0.85rem;
+        }
+
+        .ram-review-row span:first-child {
+            color: var(--ram-muted);
+        }
+
+        .ram-review-row strong {
+            color: #F8FAFC;
+            text-align: right;
         }
 
         /* Logo / Header */
@@ -444,6 +515,11 @@ $ramVar_baseUrl = $ramVar_scheme . '://' . $ramVar_host . dirname($ramVar_script
             <div class="ram-step-circle">3</div>
             <div class="ram-step-label">Kingdom & Gatekeeper</div>
         </div>
+        <div class="ram-step-line"></div>
+        <div class="ram-step <?= $ramVar_step >= 4 ? 'active' : '' ?>">
+            <div class="ram-step-circle">4</div>
+            <div class="ram-step-label">Review & Install</div>
+        </div>
     </div>
 
     <?php
@@ -467,6 +543,7 @@ $ramVar_baseUrl = $ramVar_scheme . '://' . $ramVar_host . dirname($ramVar_script
 
     <div class="ram-card">
 
+        <div id="ramWizardRequirements">
         <!-- Requirements -->
         <div class="ram-section-title">Kingdom Requirements</div>
 
@@ -486,12 +563,20 @@ $ramVar_baseUrl = $ramVar_scheme . '://' . $ramVar_host . dirname($ramVar_script
         </div>
         <?php endif; ?>
 
+        <div class="ram-wizard-actions">
+            <button type="button" class="ram-btn-primary" id="ramWizardStart" <?= !$ramVar_allOk ? 'disabled style="opacity:.5;cursor:not-allowed"' : '' ?>>
+                Continue to Patal Database →
+            </button>
+        </div>
+
         <div class="ram-divider"></div>
+        </div>
 
         <!-- The 5-Field Setup Form -->
         <form method="POST" action="install.php" id="ramInstallForm">
+            <section class="ram-wizard-panel" data-wizard-panel="2">
 
-            <div class="ram-section-title">Patal Database Connection</div>
+            <div class="ram-section-title">Step 2 — Patal Database</div>
 
             <div class="ram-field">
                 <label for="db_name">Patal Database Name <span class="ram-required">*</span></label>
@@ -539,7 +624,12 @@ $ramVar_baseUrl = $ramVar_scheme . '://' . $ramVar_host . dirname($ramVar_script
                            title="Only letters, numbers, underscores. Must start with letter or underscore.">
                 </div>
             </div>
+            <div class="ram-wizard-actions">
+                <button type="button" class="ram-btn-primary" data-wizard-next>Continue to Kingdom & Gatekeeper →</button>
+            </div>
+            </section>
 
+            <section class="ram-wizard-panel" data-wizard-panel="3">
             <div class="ram-divider"></div>
 
             <div class="ram-section-title">Kingdom Information</div>
@@ -592,22 +682,30 @@ $ramVar_baseUrl = $ramVar_scheme . '://' . $ramVar_host . dirname($ramVar_script
                            required autocomplete="new-password">
                 </div>
             </div>
+            <div class="ram-wizard-actions">
+                <button type="button" class="ram-btn-secondary" data-wizard-back>← Back</button>
+                <button type="button" class="ram-btn-primary" data-wizard-next>Review Installation →</button>
+            </div>
+            </section>
 
-            <!-- Hidden token to prevent installer re-submission -->
-            <input type="hidden" name="install_token" value="<?= htmlspecialchars(
-                bin2hex(random_bytes(16)),
-                ENT_QUOTES, 'UTF-8'
-            ) ?>">
-
-            <?php if (!$ramVar_allOk): ?>
-                <button type="submit" class="ram-btn-primary" disabled style="opacity:0.5;cursor:not-allowed;">
-                    ⚠️ Fix Requirements First
+            <section class="ram-wizard-panel" data-wizard-panel="4">
+            <div class="ram-section-title">Step 4 — Review & Install</div>
+            <div class="ram-review">
+                <div class="ram-review-row"><span>Database host</span><strong id="review-db-host"></strong></div>
+                <div class="ram-review-row"><span>Database name</span><strong id="review-db-name"></strong></div>
+                <div class="ram-review-row"><span>Table prefix</span><strong id="review-db-prefix"></strong></div>
+                <div class="ram-review-row"><span>Site name</span><strong id="review-site-name"></strong></div>
+                <div class="ram-review-row"><span>Site URL</span><strong id="review-site-url"></strong></div>
+                <div class="ram-review-row"><span>Gatekeeper</span><strong id="review-admin"></strong></div>
+            </div>
+            <input type="hidden" name="install_token" value="<?= htmlspecialchars($ramVar_installerToken, ENT_QUOTES, 'UTF-8') ?>">
+            <div class="ram-wizard-actions">
+                <button type="button" class="ram-btn-secondary" data-wizard-back>← Back</button>
+                <button type="submit" class="ram-btn-primary" id="ramSubmitBtn" <?= !$ramVar_allOk ? 'disabled' : '' ?>>
+                    <span>🏹</span> Install Ramayan CMS
                 </button>
-            <?php else: ?>
-                <button type="submit" class="ram-btn-primary" id="ramSubmitBtn">
-                    <span>🏹</span> Begin the Swayamvar
-                </button>
-            <?php endif; ?>
+            </div>
+            </section>
 
         </form>
 
@@ -628,6 +726,68 @@ $ramVar_baseUrl = $ramVar_scheme . '://' . $ramVar_host . dirname($ramVar_script
 document.addEventListener('DOMContentLoaded', function () {
     const ramVar_form   = document.getElementById('ramInstallForm');
     const ramVar_btn    = document.getElementById('ramSubmitBtn');
+    const ramVar_start  = document.getElementById('ramWizardStart');
+    let ramVar_step = 1;
+
+    function ramVar_showStep(step) {
+        ramVar_step = step;
+        if (step > 1) {
+            ramVar_form.classList.add('active');
+        } else {
+            ramVar_form.classList.remove('active');
+        }
+        const ramVar_requirements = document.getElementById('ramWizardRequirements');
+        if (ramVar_requirements) ramVar_requirements.style.display = step === 1 ? 'block' : 'none';
+
+        document.querySelectorAll('[data-wizard-panel]').forEach(function (panel) {
+            panel.classList.toggle('active', Number(panel.dataset.wizardPanel) === step);
+        });
+
+        document.querySelectorAll('.ram-steps > .ram-step').forEach(function (item, index) {
+            item.classList.toggle('active', index < step);
+        });
+    }
+
+    function ramVar_validatePanel(panel) {
+        const ramVar_fields = Array.from(panel.querySelectorAll('input[required]'));
+        return ramVar_fields.every(function (field) {
+            return field.reportValidity();
+        });
+    }
+
+    function ramVar_updateReview() {
+        document.getElementById('review-db-host').textContent = document.getElementById('db_host').value;
+        document.getElementById('review-db-name').textContent = document.getElementById('db_name').value;
+        document.getElementById('review-db-prefix').textContent = document.getElementById('db_prefix').value;
+        document.getElementById('review-site-name').textContent = document.getElementById('site_name').value;
+        document.getElementById('review-site-url').textContent = document.getElementById('site_url').value;
+        document.getElementById('review-admin').textContent =
+            document.getElementById('admin_username').value + ' — ' +
+            document.getElementById('admin_email').value;
+    }
+
+    if (ramVar_start) {
+        ramVar_start.addEventListener('click', function () {
+            ramVar_showStep(2);
+            document.querySelector('[data-wizard-panel="1"]')?.classList.remove('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    document.querySelectorAll('[data-wizard-next]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const panel = button.closest('[data-wizard-panel]');
+            if (panel && !ramVar_validatePanel(panel)) return;
+            if (ramVar_step === 3) ramVar_updateReview();
+            ramVar_showStep(Math.min(ramVar_step + 1, 4));
+        });
+    });
+
+    document.querySelectorAll('[data-wizard-back]').forEach(function (button) {
+        button.addEventListener('click', function () {
+            ramVar_showStep(Math.max(ramVar_step - 1, 1));
+        });
+    });
 
     if (!ramVar_form || !ramVar_btn) return;
 
