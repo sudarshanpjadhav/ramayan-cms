@@ -1,7 +1,7 @@
 # RAMAYAN CMS — Plugin Creation Guide
 
-Version: 1.0  
-Audience: PHP developers, agencies, and plugin authors  
+Version: 1.0
+Audience: PHP developers, agencies, and plugin authors
 Scope: Creating, testing, activating, packaging, and distributing plugins for Ramayan CMS
 
 ---
