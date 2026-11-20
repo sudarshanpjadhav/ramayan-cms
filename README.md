@@ -71,6 +71,19 @@ For complete instructions, see:
 - [RAMAYAN_THEME_CREATION_GUIDE.md](RAMAYAN_THEME_CREATION_GUIDE.md)
 - [RAMAYAN_VISIBLE_NAMING.md](RAMAYAN_VISIBLE_NAMING.md)
 
+## Plugin Development
+
+Plugins are stored in:
+
+```text
+vaanar/
+```
+
+See:
+
+- [RAMAYAN_PLUGIN_CREATION_GUIDE.md](RAMAYAN_PLUGIN_CREATION_GUIDE.md)
+- [RAMAYAN_DEVELOPER_DOCUMENTATION.md](RAMAYAN_DEVELOPER_DOCUMENTATION.md)
+
 ## Project Structure
 
 ```text
