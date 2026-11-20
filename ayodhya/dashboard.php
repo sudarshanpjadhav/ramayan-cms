@@ -119,7 +119,7 @@ try {
         <div style="padding: 1rem; border-radius: 8px; background: rgba(34, 197, 94, 0.05); border: 1px solid rgba(34, 197, 94, 0.2);">
             <p style="color: #4ADE80; font-size: 0.85rem;">✓ Patal Database Connected</p>
             <p style="color: #4ADE80; font-size: 0.85rem;">✓ PHP <?= phpversion() ?></p>
-            <p style="color: #4ADE80; font-size: 0.85rem;">✓ Ramayan CMS v1.0.0</p>
+            <p style="color: #4ADE80; font-size: 0.85rem;">✓ Ramayan CMS v<?= ram_esc_html(\Ram\Core\Ram::ramFn_getInstance()->ramFn_version()) ?></p>
             <?php if ($ramVar_pendingCount > 0): ?>
             <p style="color: #FBBF24; font-size: 0.85rem;">⚠ <?= $ramVar_pendingCount ?> chronicles awaiting Sabha review</p>
             <?php endif; ?>

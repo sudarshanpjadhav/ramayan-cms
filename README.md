@@ -2,6 +2,8 @@
 
 Ramayan CMS is a PHP 8.1+ content management system built around a Ramayana-inspired ecosystem.
 
+**Current version:** `1.0.0-alpha`
+
 It includes:
 
 - Ayodhya administration panel
@@ -14,6 +16,12 @@ It includes:
 - Saraswati SEO tools
 - Akashvani hooks
 - Nandan media library
+
+## Screenshots
+
+### Frontend
+
+![Ramayan CMS frontend](screenshots/frontend.png)
 
 ## Requirements
 
@@ -107,7 +115,7 @@ cache/                   Runtime cache
 
 ## Development
 
-The project is currently an alpha release. Database compatibility and public APIs may change.
+The project is currently at version `1.0.0-alpha`. It is an alpha release, so database compatibility and public APIs may change.
 
 Run PHP syntax checks for changed PHP files:
 
