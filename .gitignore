@@ -1,0 +1,35 @@
+# Local configuration and secrets
+ramayan-config.php
+.env
+.env.*
+
+# Runtime and generated files
+cache/*
+!cache/.htaccess
+uploads/*
+logs/
+*.log
+
+# Development and scratch files
+scratch/
+.opencode/
+.vscode/
+.idea/
+temp_*.sql
+
+# Test/debug files
+test.php
+test_login.php
+test_login_flow.php
+ayodhya/check-users-direct.php
+ayodhya/check-users.php
+ayodhya/db-test.php
+ayodhya/fix-login.php
+ayodhya/session-test.php
+
+# PHP and OS artifacts
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
